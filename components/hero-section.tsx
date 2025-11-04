@@ -30,11 +30,11 @@ export default function HeroSection() {
         
         
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mt-12 md:mt-16 mb-12 md:mb-16 px-4 md:px-0">
+        {/* <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mt-12 md:mt-16 mb-12 md:mb-16 px-4 md:px-0">
           <Button className="w-full sm:w-auto border-2 border-[#ca6ab1]/60 text-white hover:border-[#ca6ab1] hover:bg-[#ca6ab1]/10 rounded-full px-14 py-6 text-2xl font-semibold transition-all duration-300">
             Explore Platform
           </Button>
-        </div>
+        </div> */}
       </div>
     </section>
   )
