@@ -118,7 +118,7 @@ export default function BetaSection() {
                 <input type="hidden" name="entry.707814701" value={formData.email} />
                 <input type="hidden" name="entry.234731111" value={formData.profileType} />
                 <input type="hidden" name="entry.590462611" value={formData.fieldOfInterest} />
-                <input type="hidden" name="entry.1218185121" value={formData.message} />
+                <input type="hidden" name="entry.8897231" value={formData.message} />
 
                 <div className="flex flex-col gap-3 pt-1">
                   <div className="flex items-start gap-3">
