@@ -1,166 +1,704 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Check } from "lucide-react"
-import { Checkbox } from "@/components/ui/checkbox"
+import { useEffect, useState } from "react";
+import { CheckCircle2, Loader2, Trash2 } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import SectionHeader from "@/components/sectionHeader";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/hooks/useTranslation";
+import { User, Building2, Printer, Plus, MapPin, Mail, Globe } from "lucide-react";
 
-export default function BetaSection() {
-  const [formData, setFormData] = useState({
-    fullName: "",
+interface UserForm {
+  name: string;
+  email: string;
+  country: string;
+  city: string;
+  isbusiness: boolean;
+  businessname: string;
+  businessemail: string;
+  businesstype: string;
+  countrycityop: string;
+}
+
+interface PrinterType {
+  brand: string;
+  model: string;
+  material: string;
+  location: string;
+}
+
+interface PartnerForm extends UserForm {
+  printers: PrinterType[];
+}
+
+export default function JoinBeta() {
+  const { t } = useTranslation();
+
+  const [userForm, setUserForm] = useState<UserForm>({
+    name: "",
     email: "",
-    profileType: "both",
-    fieldOfInterest: "",
-    message: "",
-  })
-  const [submitted, setSubmitted] = useState(false)
-  const [agreeTerms, setAgreeTerms] = useState(false)
+    country: "",
+    city: "",
+    isbusiness: false,
+    businessname: "",
+    businessemail: "",
+    businesstype: "",
+    countrycityop: "",
+  });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
-  }
+  const [partnerForm, setPartnerForm] = useState<PartnerForm>({
+    name: "",
+    email: "",
+    country: "",
+    city: "",
+    isbusiness: false,
+    businessname: "",
+    businessemail: "",
+    businesstype: "",
+    countrycityop: "",
+    printers: [{ brand: "", model: "", material: "", location: "" }],
+  });
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const [submittedType, setSubmittedType] = useState<"user" | "partner" | null>(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(false);
+  const [isLoadingPartner, setIsLoadingPartner] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
-    const form = e.target as HTMLFormElement
-    const data = new FormData(form)
-
-    try {
-      await fetch(
-        "https://docs.google.com/forms/d/e/1FAIpQLSdmssfkLRf3VqG-8mr_7d3ULI7i6luyr5xPtIAoJni0hJFGWw/formResponse",
-        {
-          method: "POST",
-          mode: "no-cors",
-          body: data,
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+          );
+          const data = await res.json();
+          const city = data.address.city || data.address.town || data.address.village || "";
+          const country = data.address.country || "";
+          setUserForm((prev) => ({ ...prev, city, country }));
+          setPartnerForm((prev) => ({ ...prev, city, country }));
+        } catch (err) {
         }
-      )
-      setSubmitted(true)
-    } catch (err) {
-      console.error("Error submitting form:", err)
+      });
     }
+  }, []);
+
+  const handleUserChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setUserForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
+    setErrorMessage(""); // Clear error on input change
+  };
+
+  const handlePartnerChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    index?: number,
+    field?: keyof PrinterType
+  ) => {
+    const { name, value, type, checked } = e.target;
+    if (field !== undefined && index !== undefined) {
+      const updated = [...partnerForm.printers];
+      updated[index][field] = value;
+      setPartnerForm((prev) => ({ ...prev, printers: updated }));
+    } else {
+      setPartnerForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
+    }
+    setErrorMessage(""); // Clear error on input change
+  };
+const [successMessage, setSuccessMessage] = useState(""); // nouvel état pour le message de succès
+
+const handleUserSubmit = async () => {
+  setErrorMessage("");
+  setSuccessMessage(""); // clear previous success
+  setIsLoadingUser(true);
+
+  try {
+    const res = await fetch("/api/join-beta", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "user", ...userForm }),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      setErrorMessage(result.error || "Une erreur est survenue");
+      return;
+    }
+
+    if (result.success) {
+      setSubmittedType("user");
+      setSuccessMessage("User form successfully submitted !"); // message succès
+      // Reset form
+      setUserForm({
+        name: "",
+        email: "",
+        country: userForm.country,
+        city: userForm.city,
+        isbusiness: false,
+        businessname: "",
+        businessemail: "",
+        businesstype: "",
+        countrycityop: "",
+      });
+    } else {
+      setErrorMessage(result.error || "Erreur lors de la soumission");
+    }
+  } catch (err: any) {
+    setErrorMessage("Erreur de connexion au serveur");
+  } finally {
+    setIsLoadingUser(false);
   }
+};
+
+const handlePartnerSubmit = async () => {
+  setErrorMessage("");
+  setSuccessMessage(""); // clear previous success
+  setIsLoadingPartner(true);
+
+  try {
+    const res = await fetch("/api/join-beta", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "partner", ...partnerForm }),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      setErrorMessage(result.error || " erreur ");
+      return;
+    }
+
+    if (result.success) {
+      setSubmittedType("partner");
+      setSuccessMessage("Partner form successfully submitted !"); // message succès
+      // Reset form
+      setPartnerForm({
+        name: "",
+        email: "",
+        country: partnerForm.country,
+        city: partnerForm.city,
+        isbusiness: false,
+        businessname: "",
+        businessemail: "",
+        businesstype: "",
+        countrycityop: "",
+        printers: [{ brand: "", model: "", material: "", location: "" }],
+      });
+    } else {
+      setErrorMessage(result.error || "Erreur lors de la soumission");
+    }
+  } catch (err: any) {
+    setErrorMessage("Erreur de connexion au serveur");
+  } finally {
+    setIsLoadingPartner(false);
+  }
+};
+
+
+  const addPrinter = () => {
+    setPartnerForm((prev) => ({
+      ...prev,
+      printers: [...prev.printers, { brand: "", model: "", material: "", location: "" }],
+    }));
+  };
+
+  const removePrinter = (index: number) => {
+    if (partnerForm.printers.length > 1) {
+      setPartnerForm((prev) => ({
+        ...prev,
+        printers: prev.printers.filter((_, i) => i !== index),
+      }));
+    }
+  };
 
   return (
-    <section id="beta" className="py-28 px-6 bg-[#cccacc]">
-      <h2 className="text-center text-5xl md:text-6xl font-bold text-[#081849] mb-6">
-        Register for Beta
-      </h2>
-      <div className="w-20 h-1.5 bg-gradient-to-r from-[#b64198] via-[#ca6ab1] to-[#893172] mx-auto rounded-full mb-6"></div>
-      <p className="text-center text-[#5a5759] text-lg max-w-2xl mx-auto mb-6">
-        Ready to shape the next generation of 3D printing? Join our Beta program and get early access to ProtoVerse.
-      </p>
+    <section id="beta" className="py-24 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-b from-muted/30 via-muted/10 to-transparent pointer-events-none" />
 
-      <div className="max-w-4xl mx-auto">
-        <div className="relative rounded-3xl overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#b64198]/8 to-[#893172]/5 rounded-3xl p-12 border border-[#1f3a5f]/50 hover:border-[#b64198]/30 transition duration-500"></div>
-          <div className="absolute top-0 right-0 w-96 h-96 bg-[#ca6ab1]/5 rounded-full blur-3xl -z-10"></div>
+      <div className="container mx-auto px-4 md:px-6 relative">
+        <SectionHeader
+          title={t.joinBetaTitle}
+          highlight={t.joinBetaTitleHighlight}
+          subtitle={t.joinBetaSubtitle}
+        />
 
-          <div className="relative p-12 md:p-16 z-10">
-            {!submitted ? (
-              <form onSubmit={handleSubmit}>
-                <input
-                  type="text"
-                  name="fullName"
-                  placeholder="Full Name"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  required
-                  className="w-full mb-4 px-6 py-4 rounded-xl bg-white border-2 border-[#213885] text-[#081849] placeholder-[#5a5759] focus:outline-none focus:border-[#ca6ab1] transition"
-                />
+        <Tabs defaultValue="users" className="max-w-3xl mx-auto">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-12 bg-card/50 backdrop-blur-sm p-1 rounded-xl border border-border/50">
+            <TabsTrigger
+              value="users"
+              className="text-base rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300"
+            >
+              <User className="w-4 h-4 mr-2" /> {t.forUsers}
+            </TabsTrigger>
+            <TabsTrigger
+              value="partners"
+              className="text-base rounded-lg data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground transition-all duration-300"
+            >
+              <Building2 className="w-4 h-4 mr-2" /> {t.forPartners}
+            </TabsTrigger>
+          </TabsList>
 
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Email Address"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  className="w-full mb-4 px-6 py-4 rounded-xl bg-white border-2 border-[#213885] text-[#081849] placeholder-[#5a5759] focus:outline-none focus:border-[#ca6ab1] transition"
-                />
-
-                <select
-                  name="profileType"
-                  value={formData.profileType}
-                  onChange={handleChange}
-                  className="w-full mb-4 px-6 py-4 rounded-xl bg-white border-2 border-[#213885] text-[#081849] focus:outline-none focus:border-[#ca6ab1] transition"
-                >
-                  <option value="user">Maker/Creator</option>
-                  <option value="partner">Partner/Service Provider</option>
-                  <option value="both">Both</option>
-                </select>
-
-                <input
-                  type="text"
-                  name="fieldOfInterest"
-                  placeholder="Field of Interest (e.g., Prototyping, Manufacturing, Design)"
-                  value={formData.fieldOfInterest}
-                  onChange={handleChange}
-                  className="w-full mb-4 px-6 py-4 rounded-xl bg-white border-2 border-[#213885] text-[#081849] placeholder-[#5a5759] focus:outline-none focus:border-[#ca6ab1] transition"
-                />
-
-                <textarea
-                  name="message"
-                  placeholder="Tell us about your project or motivation to join..."
-                  rows={4}
-                  value={formData.message}
-                  onChange={handleChange}
-                  className="w-full mb-4 px-6 py-4 rounded-xl bg-white border-2 border-[#213885] text-[#081849] placeholder-[#5a5759] focus:outline-none focus:border-[#ca6ab1] transition resize-none"
-                ></textarea>
-
-                {/* Hidden fields to send data to Google Form */}
-                <input type="hidden" name="entry.1441875171" value={formData.fullName} />
-                <input type="hidden" name="entry.707814701" value={formData.email} />
-                <input type="hidden" name="entry.234731111" value={formData.profileType} />
-                <input type="hidden" name="entry.590462611" value={formData.fieldOfInterest} />
-                <input type="hidden" name="entry.8897231" value={formData.message} />
-
-                <div className="flex flex-col gap-3 pt-1">
-                  <div className="flex items-start gap-3">
-                    <Checkbox checked={agreeTerms} onCheckedChange={(v) => setAgreeTerms(Boolean(v))} />
-                    <label className="text-sm text-[#081849]">
-                      I agree to the{" "}
-                      <Link href="/terms" className="text-[#b64198] underline font-medium">
-                        Terms &amp; Conditions
-                      </Link>{" "}
-                      and{" "}
-                      <Link href="/privacy" className="text-[#b64198] underline font-medium">
-                        Privacy Policy
-                      </Link>
-                      .
-                    </label>
-                  </div>
-                </div>
-
+          {/* ------------------ USER FORM ------------------- */}
+          <TabsContent value="users">
+            {submittedType === "user" ? (
+              <div className="flex flex-col items-center justify-center p-8 bg-green-50 dark:bg-green-950/30 text-green-800 dark:text-green-200 rounded-xl text-center shadow-xl animate-fade-in space-y-3 border border-green-200 dark:border-green-800">
+                <CheckCircle2 className="w-16 h-16 text-green-600 dark:text-green-400 animate-pulse" />
+                <span className="text-xl font-semibold">Registration successful!</span>
+                <p className="text-sm opacity-80">Thank you for registering. We will contact you soon.</p>
                 <Button
-                  type="submit"
-                  disabled={!agreeTerms}
-                  className="w-full bg-[#ca6ab1] text-white hover:bg-[#b85aa1] rounded-xl py-4 font-bold text-lg shadow-lg shadow-[#ca6ab1]/40 hover:shadow-[#ca6ab1]/60 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="outline"
+                  onClick={() => setSubmittedType(null)}
+                  className="mt-4 border-green-600 text-green-600 hover:bg-green-50"
                 >
-                  Join the Beta →
+                  New registration
                 </Button>
-              </form>
-            ) : (
-              <div className="text-center py-12">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#ca6ab1]/20 border-2 border-[#ca6ab1] mb-6">
-                  <Check className="w-8 h-8 text-[#ca6ab1]" />
-                </div>
-                <h3 className="text-3xl font-bold text-[#081849] mb-3">
-                  Welcome to ProtoVerse!
-                </h3>
-                <p className="text-[#5a5759] text-lg">
-                  Check your email for next steps and early access details.
-                </p>
               </div>
+            ) : (
+              <Card className="p-6 bg-card/60 backdrop-blur-sm border-border/50 shadow-xl">
+                {errorMessage && (
+                  <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-red-800 dark:text-red-200 text-sm">
+                    {errorMessage}
+                  </div>
+                )}
+                <div className="overflow-x-auto">
+                  <table className="min-w-full border-collapse">
+                    <tbody>
+                      <tr className="border-b border-border/30">
+                        <td className="px-4 py-3 flex items-center gap-2 font-medium">
+                          <User className="w-4 h-4" /> Full name *
+                        </td>
+                        <td className="px-4 py-3">
+                          <Input
+                            name="name"
+                            value={userForm.name}
+                            onChange={handleUserChange}
+                            placeholder="Enter your full name
+"
+                            required
+                          />
+                        </td>
+                      </tr>
+                      <tr className="border-b border-border/30">
+                        <td className="px-4 py-3 flex items-center gap-2 font-medium">
+                          <Mail className="w-4 h-4" /> Email *
+                        </td>
+                        <td className="px-4 py-3">
+                          <Input
+                            name="email"
+                            type="email"
+                            value={userForm.email}
+                            onChange={handleUserChange}
+                            placeholder="votre.email@exemple.com"
+                            required
+                          />
+                        </td>
+                      </tr>
+                      <tr className="border-b border-border/30">
+                        <td className="px-4 py-3 flex items-center gap-2 font-medium">
+                          <Globe className="w-4 h-4" /> Country
+                        </td>
+                        <td className="px-4 py-3">
+                          <Input
+                            name="country"
+                            value={userForm.country}
+                            onChange={handleUserChange}
+                            placeholder="country"
+                          />
+                        </td>
+                      </tr>
+                      <tr className="border-b border-border/30">
+                        <td className="px-4 py-3 flex items-center gap-2 font-medium">
+                          <MapPin className="w-4 h-4" /> City
+                        </td>
+                        <td className="px-4 py-3">
+                          <Input
+                            name="city"
+                            value={userForm.city}
+                            onChange={handleUserChange}
+                            placeholder="city"
+                          />
+                        </td>
+                      </tr>
+
+                      {/* Business Checkbox */}
+                      <tr className="border-b border-border/30 bg-muted/30">
+                        <td className="px-4 py-3 font-medium">I own a business</td>
+                        <td className="px-4 py-3">
+                          <Checkbox
+                            checked={userForm.isbusiness}
+                            onCheckedChange={(checked) =>
+                              setUserForm((prev) => ({ ...prev, isbusiness: !!checked }))
+                            }
+                          />
+                        </td>
+                      </tr>
+
+                      {userForm.isbusiness && (
+                        <>
+                          <tr className="border-b border-border/30">
+                            <td className="px-4 py-3 flex items-center gap-2 font-medium">
+                              <Building2 className="w-4 h-4" /> Business name *
+                            </td>
+                            <td className="px-4 py-3">
+                              <Input
+                                name="businessname"
+                                value={userForm.businessname}
+                                onChange={handleUserChange}
+                                placeholder="Business Name"
+                                required={userForm.isbusiness}
+                              />
+                            </td>
+                          </tr>
+                          <tr className="border-b border-border/30">
+                            <td className="px-4 py-3 flex items-center gap-2 font-medium">
+                              <Mail className="w-4 h-4" />Professional email*
+                            </td>
+                            <td className="px-4 py-3">
+                              <Input
+                                name="businessemail"
+                                type="email"
+                                value={userForm.businessemail}
+                                onChange={handleUserChange}
+                                placeholder="email@entreprise.com"
+                                required={userForm.isbusiness}
+                              />
+                            </td>
+                          </tr>
+                          <tr className="border-b border-border/30">
+                            <td className="px-4 py-3 font-medium">Business type </td>
+                            <td className="px-4 py-3">
+                              <Input
+                                name="businesstype"
+                                value={userForm.businesstype}
+                                onChange={handleUserChange}
+                                placeholder="Ex: E-commerce, Service..."
+                              />
+                            </td>
+                          </tr>
+                          <tr className="border-b border-border/30">
+                            <td className="px-4 py-3 font-medium">country / city of operation</td>
+                            <td className="px-4 py-3">
+                              <Input
+                                name="countrycityop"
+                                value={userForm.countrycityop}
+                                onChange={handleUserChange}
+                                placeholder="country / city of operation"
+                              />
+                            </td>
+                          </tr>
+                        </>
+                      )}
+                    </tbody>
+                  </table>
+{successMessage && (
+  <div className="text-green-600 font-semibold mb-4 text-center">
+    {successMessage}
+  </div>
+)}
+{errorMessage && (
+  <div className="text-red-600 font-semibold mb-4 text-center">
+    {errorMessage}
+  </div>
+)}
+
+<Button
+  className="mt-6 w-full bg-gradient-to-r from-primary to-blue-500 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
+  onClick={handleUserSubmit}
+  disabled={isLoadingUser}
+>
+  {isLoadingUser ? (
+    <div className="flex items-center justify-center">
+      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+     Submission in progress...
+    </div>
+  ) : (
+    "Join beta as User "
+  )}
+</Button>
+
+                </div>
+              </Card>
             )}
-          </div>
-        </div>
+          </TabsContent>
+
+          {/* ----------------- PARTNER FORM ----------------- */}
+          <TabsContent value="partners">
+            {submittedType === "partner" ? (
+              <div className="flex flex-col items-center justify-center p-8 bg-green-50 dark:bg-green-950/30 text-green-800 dark:text-green-200 rounded-xl text-center shadow-xl animate-fade-in space-y-3 border border-green-200 dark:border-green-800">
+                <CheckCircle2 className="w-16 h-16 text-green-600 dark:text-green-400 animate-pulse" />
+                <span className="text-xl font-semibold">Registered partnership!</span>
+                <p className="text-sm opacity-80">
+                  Thank you for becoming a partner. Our team will contact you shortly.
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => setSubmittedType(null)}
+                  className="mt-4 border-green-600 text-green-600 hover:bg-green-50"
+                >
+                  New registration
+                </Button>
+              </div>
+            ) : (
+              <Card className="p-6 bg-card/60 backdrop-blur-sm border-border/50 shadow-xl">
+                {errorMessage && (
+                  <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-red-800 dark:text-red-200 text-sm">
+                    {errorMessage}
+                  </div>
+                )}
+                <div className="overflow-x-auto">
+                  <table className="min-w-full border-collapse">
+                    <tbody>
+                      <tr className="border-b border-border/30">
+                        <td className="px-4 py-3 flex items-center gap-2 font-medium">
+                          <User className="w-4 h-4" /> full name *
+                        </td>
+                        <td className="px-4 py-3">
+                          <Input
+                            name="name"
+                            value={partnerForm.name}
+                            onChange={handlePartnerChange}
+                            placeholder="full name"
+                            required
+                          />
+                        </td>
+                      </tr>
+                      <tr className="border-b border-border/30">
+                        <td className="px-4 py-3 flex items-center gap-2 font-medium">
+                          <Mail className="w-4 h-4" /> Email *
+                        </td>
+                        <td className="px-4 py-3">
+                          <Input
+                            name="email"
+                            type="email"
+                            value={partnerForm.email}
+                            onChange={handlePartnerChange}
+                            placeholder="votre.email@exemple.com"
+                            required
+                          />
+                        </td>
+                      </tr>
+                      <tr className="border-b border-border/30">
+                        <td className="px-4 py-3 flex items-center gap-2 font-medium">
+                          <Globe className="w-4 h-4" /> country
+                        </td>
+                        <td className="px-4 py-3">
+                          <Input
+                            name="country"
+                            value={partnerForm.country}
+                            onChange={handlePartnerChange}
+                            placeholder="country"
+                          />
+                        </td>
+                      </tr>
+                      <tr className="border-b border-border/30">
+                        <td className="px-4 py-3 flex items-center gap-2 font-medium">
+                          <MapPin className="w-4 h-4" /> city
+                        </td>
+                        <td className="px-4 py-3">
+                          <Input
+                            name="city"
+                            value={partnerForm.city}
+                            onChange={handlePartnerChange}
+                            placeholder="city"
+                          />
+                        </td>
+                      </tr>
+
+                      {/* Business Checkbox */}
+                      <tr className="border-b border-border/30 bg-muted/30">
+                        <td className="px-4 py-3 font-medium">I own a business
+</td>
+                        <td className="px-4 py-3">
+                          <Checkbox
+                            checked={partnerForm.isbusiness}
+                            onCheckedChange={(checked) =>
+                              setPartnerForm((prev) => ({ ...prev, isbusiness: !!checked }))
+                            }
+                          />
+                        </td>
+                      </tr>
+
+                      {partnerForm.isbusiness && (
+                        <>
+                          <tr className="border-b border-border/30">
+                            <td className="px-4 py-3 flex items-center gap-2 font-medium">
+                              <Building2 className="w-4 h-4" /> Business name  *
+                            </td>
+                            <td className="px-4 py-3">
+                              <Input
+                                name="businessName"
+                                value={partnerForm.businessname}
+                                onChange={handlePartnerChange}
+                                placeholder="Business Name"
+                                required={partnerForm.isbusiness}
+                              />
+                            </td>
+                          </tr>
+                          <tr className="border-b border-border/30">
+                            <td className="px-4 py-3 flex items-center gap-2 font-medium">
+                              <Mail className="w-4 h-4" /> Professional email *
+                            </td>
+                            <td className="px-4 py-3">
+                              <Input
+                                name="businessEmail"
+                                type="email"
+                                value={partnerForm.businessemail}
+                                onChange={handlePartnerChange}
+                                placeholder="email@entreprise.com"
+                                required={partnerForm.isbusiness}
+                              />
+                            </td>
+                          </tr>
+                          <tr className="border-b border-border/30">
+                            <td className="px-4 py-3 font-medium">Business type</td>
+                            <td className="px-4 py-3">
+                              <Input
+                                name="businessType"
+                                value={partnerForm.businesstype}
+                                onChange={handlePartnerChange}
+                                placeholder="Ex: Fabrication, Service..."
+                              />
+                            </td>
+                          </tr>
+                          <tr className="border-b border-border/30">
+                            <td className="px-4 py-3 font-medium">country / city of operation</td>
+                            <td className="px-4 py-3">
+                              <Input
+                                name="countryCityop"
+                                value={partnerForm.countrycityop}
+                                onChange={handlePartnerChange}
+                                placeholder="country / city of operation"
+                              />
+                            </td>
+                          </tr>
+                        </>
+                      )}
+                    </tbody>
+                  </table>
+
+                  {/* Printers Section */}
+                  <div className="mt-8 p-4 bg-secondary/5 rounded-lg border border-secondary/20">
+                    <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
+                      <Printer className="w-5 h-5 text-secondary" />
+                      3D prints  *
+                    </h3>
+
+                    {partnerForm.printers.map((printer, idx) => (
+                      <div
+                        key={idx}
+                        className="mb-4 p-4 bg-card rounded-lg border border-border/50 relative"
+                      >
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="font-medium text-sm">print #{idx + 1}</span>
+                          {partnerForm.printers.length > 1 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removePrinter(idx)}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs font-medium mb-1 block">brand</label>
+                            <Input
+                              value={printer.brand}
+                              onChange={(e) => handlePartnerChange(e, idx, "brand")}
+                              placeholder="Ex: Creality"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium mb-1 block">model</label>
+                            <Input
+                              value={printer.model}
+                              onChange={(e) => handlePartnerChange(e, idx, "model")}
+                              placeholder="Ex: Ender 3"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium mb-1 block">material</label>
+                            <Input
+                              value={printer.material}
+                              onChange={(e) => handlePartnerChange(e, idx, "material")}
+                              placeholder="Ex: PLA, ABS, PETG"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium mb-1 block">location</label>
+                            <Input
+                              value={printer.location}
+                              onChange={(e) => handlePartnerChange(e, idx, "location")}
+                              placeholder="Ex: Bureau, Atelier"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    <Button
+                      variant="outline"
+                      onClick={addPrinter}
+                      className="w-full border-secondary/40 hover:border-secondary/60 hover:bg-secondary/10"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />   add another printer
+                    </Button>
+                  </div>
+
+{successMessage && (
+  <div className="text-green-600 font-semibold mb-4 text-center">
+    {successMessage}
+  </div>
+)}
+{errorMessage && (
+  <div className="text-red-600 font-semibold mb-4 text-center">
+    {errorMessage}
+  </div>
+)}
+
+<Button
+  className="mt-6 w-full bg-gradient-to-r from-secondary to-purple-500 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
+  onClick={handlePartnerSubmit}
+  disabled={isLoadingPartner}
+>
+  {isLoadingPartner ? (
+    <div className="flex items-center justify-center">
+      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+      Submission in progress...
+    </div>
+  ) : (
+    "Join beta as Partner "
+  )}
+</Button>
+
+                </div>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
+
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fade-in {
+          animation: fadeIn 0.8s ease-out forwards;
+        }
+      `}</style>
     </section>
-  )
+  );
 }

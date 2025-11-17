@@ -1,67 +1,76 @@
+@import "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap";
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* Updated @font-face declarations to use /fonts/ path from public folder */
+/* Fonts */
 @font-face {
-  font-family: "Oswald";
-  src: url("/fonts/Oswald-Light.ttf") format("truetype");
-  font-weight: 300;
+  font-family: 'Space Grotesk';
   font-style: normal;
+  font-weight: 300; /* Light */
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPbF4Cw.woff2) format('woff2');
 }
 
+/* Regular weight */
 @font-face {
-  font-family: "Oswald";
-  src: url("/fonts/Oswald-Regular.ttf") format("truetype");
-  font-weight: 400;
+  font-family: 'Space Grotesk';
   font-style: normal;
+  font-weight: 400; /* Regular */
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPb54C-s0.woff2) format('woff2');
 }
 
+/* Bold weight */
 @font-face {
-  font-family: "Oswald";
-  src: url("/fonts/Oswald-Bold.ttf") format("truetype");
-  font-weight: 700;
+  font-family: 'Space Grotesk';
   font-style: normal;
+  font-weight: 700; /* Bold */
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPb54C-s0.woff2) format('woff2');
 }
 
 @custom-variant dark (&:is(.dark *));
 
+/* Light theme */
 :root {
-  /* Updated color palette: light gray background, navy text, magenta accents */
   --background: #cccacc;
   --foreground: #081849;
   --card: #f0eeef;
   --card-foreground: #081849;
   --popover: #ffffff;
   --popover-foreground: #081849;
-  --primary: #ca6ab1;
+
+  /* Remplacement des couleurs rose par cyan/bleu */
+  --primary: #00bcd4; /* cyan */
   --primary-foreground: #ffffff;
-  --secondary: #213885;
+  --secondary: #213885; /* bleu foncé */
   --secondary-foreground: #ffffff;
   --muted: #b0adb0;
   --muted-foreground: #5a5759;
-  --accent: #ca6ab1;
+  --accent: #0070f3; /* bleu vif */
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
   --border: #213885;
   --input: #ffffff;
-  --ring: #ca6ab1;
-  --chart-1: #ca6ab1;
-  --chart-2: #893172;
+  --ring: #00bcd4;
+  --chart-1: #00bcd4;
+  --chart-2: #2196f3;
   --chart-3: #213885;
   --chart-4: #5f3475;
   --chart-5: #cccacc;
   --radius: 0.625rem;
   --sidebar: #081849;
   --sidebar-foreground: #cccacc;
-  --sidebar-primary: #ca6ab1;
+  --sidebar-primary: #00bcd4;
   --sidebar-primary-foreground: #081849;
-  --sidebar-accent: #ca6ab1;
+  --sidebar-accent: #0070f3;
   --sidebar-accent-foreground: #081849;
   --sidebar-border: #213885;
-  --sidebar-ring: #ca6ab1;
+  --sidebar-ring: #00bcd4;
 }
 
+/* Dark theme */
 .dark {
   --background: #0a1128;
   --foreground: #ecdfd2;
@@ -69,33 +78,36 @@
   --card-foreground: #ecdfd2;
   --popover: #0f1831;
   --popover-foreground: #ecdfd2;
-  --primary: #893172;
+
+  /* Remplacement du rose / magenta par cyan/bleu */
+  --primary: #00bcd4;
   --primary-foreground: #ecdfd2;
   --secondary: #213885;
   --secondary-foreground: #ecdfd2;
   --muted: #2a3f5f;
   --muted-foreground: #a399a0;
-  --accent: #b64198;
+  --accent: #0070f3;
   --accent-foreground: #ecdfd2;
   --destructive: #ef4444;
   --destructive-foreground: #ecdfd2;
   --border: #1f3a5f;
   --input: #131e38;
-  --ring: #b64198;
+  --ring: #00bcd4;
   --sidebar: #081849;
   --sidebar-foreground: #ecdfd2;
-  --sidebar-primary: #b64198;
+  --sidebar-primary: #00bcd4;
   --sidebar-primary-foreground: #0a1128;
-  --sidebar-accent: #ca6ab1;
+  --sidebar-accent: #0070f3;
   --sidebar-accent-foreground: #0a1128;
   --sidebar-border: #1f3a5f;
-  --sidebar-ring: #b64198;
+  --sidebar-ring: #00bcd4;
 }
 
+/* Fonts & base styles */
 @theme inline {
-  /* Updated font-sans to use Oswald instead of Geist */
-  --font-sans: "Oswald", "Oswald Fallback", sans-serif;
+  --font-sans: "Space Grotesk", sans-serif;
   --font-mono: "Geist Mono", "Geist Mono Fallback";
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -134,6 +146,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* Base layer */
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -143,49 +156,23 @@
   }
 }
 
+/* Animations */
 @keyframes pulse {
-  0%,
-  100% {
-    opacity: 0.3;
-  }
-  50% {
-    opacity: 1;
-  }
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
 }
 
 @keyframes slide-in {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes glow-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 20px rgba(202, 106, 177, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 30px rgba(202, 106, 177, 0.5);
-  }
+  0%, 100% { box-shadow: 0 0 20px rgba(0, 188, 212, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(0, 188, 212, 0.5); }
 }
 
-.animate-pulse {
-  animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-.delay-1000 {
-  animation-delay: 1s;
-}
-
-.animate-slide-in {
-  animation: slide-in 0.6s ease-out;
-}
-
-.animate-glow-pulse {
-  animation: glow-pulse 3s ease-in-out infinite;
-}
+.animate-pulse { animation: pulse 4s cubic-bezier(0.4,0,0.6,1) infinite; }
+.delay-1000 { animation-delay: 1s; }
+.animate-slide-in { animation: slide-in 0.6s ease-out; }
+.animate-glow-pulse { animation: glow-pulse 3s ease-in-out infinite; }

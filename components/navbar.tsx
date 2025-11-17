@@ -1,95 +1,89 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { LanguageSwitcher } from "@/components/LanguageSwitcher"
+import ThemeToggle from "@/components/ThemeToggle"
+import { useTranslation } from "@/hooks/useTranslation"
 
 export default function Navbar() {
-  const [isInStorySection, setIsInStorySection] = useState(false)
+  const { t } = useTranslation()
+  const [isScrolled, setIsScrolled] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
-      // consider multiple sections where we want the "light"/primary logo
-      const sectionIds = ['story', 'about', 'beta']
-      let anyInView = false
-
-      for (const id of sectionIds) {
-        const el = document.getElementById(id)
-        if (el) {
-          const rect = el.getBoundingClientRect()
-          // Check if this section is passing under the navbar (approx)
-          const isInView = rect.top <= 100 && rect.bottom >= 100
-          if (isInView) {
-            anyInView = true
-            break
-          }
-        }
-      }
-
-      setIsInStorySection(anyInView)
+      setIsScrolled(window.scrollY > 20)
     }
 
-    // Check on mount
     handleScroll()
-
-    // Add scroll listener
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
+    window.addEventListener("scroll", handleScroll)
+    return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
   return (
-    <nav
-      className={`fixed top-0 w-full z-50 backdrop-blur-md border-b transition-all duration-500 ${isInStorySection
-          ? 'bg-gradient-to-b from-white/95 to-white/80 border-[#b64198]/20 shadow-lg'
-          : 'bg-transparent border-transparent'
-        }`}
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 border-b transition-all duration-300 ${
+        isScrolled
+          ? "bg-background/95 backdrop-blur-md border-border/50 shadow-lg"
+          : "bg-background/80 backdrop-blur-sm border-border/30"
+      }`}
     >
-<div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-        <div className="flex items-center gap-12">
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="flex justify-between items-center py-4 px-6">
+          {/* Logo */}
           <div className="flex items-center">
-            <a href="/" className="mb-0 inline-block transition-all duration-300">
-              <img
-                src={isInStorySection ? "/primary_logo_horizontal_no_bg.png" : "/secondary_logo_horizontal_no_bg.png"}
-                alt="ProtoVerse Logo"
-                className="h-10 w-auto object-contain"
-              />
-            </a>
+<a href="/" className="flex items-center gap-2 group">
+  {/* Logo clair */}
+  <img
+    src="/primary_logo_horizontal_no_bg.png"
+    alt="ProtoVerse Light Logo"
+    className="block dark:hidden h-8 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+  />
+
+  {/* Logo sombre */}
+  <img
+    src="/secondary_logo_horizontal_no_bg.png"
+    alt="ProtoVerse Dark Logo"
+    className="hidden dark:block h-8 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+  />
+</a>
+
           </div>
 
-          <div className="hidden md:flex items-center gap-10">
+          {/* Menu principal */}
+          <nav className="hidden md:flex items-center gap-8">
             <a
               href="#about"
-              className={`transition-all duration-500 text-lg font-medium ${isInStorySection
-                  ? 'text-[#081849] hover:text-[#b64198]'
-                  : 'text-[#ecdfd2] hover:text-[#ca6ab1]'
-                }`}
+              className="text-base font-medium text-muted-foreground hover:text-primary transition-colors duration-200"
             >
-              Who We Are
-
+              {t.about || "About us "}
             </a>
-            <a
-              href="#story"
-              className={`transition-all duration-500 text-lg font-medium ${isInStorySection
-                  ? 'text-[#081849] hover:text-[#b64198]'
-                  : 'text-[#ecdfd2] hover:text-[#ca6ab1]'
-                }`}
-            >
-              Our Story
-            </a>
+  <a
+  href="#story"
+  className="text-base font-medium text-muted-foreground hover:text-primary transition-colors duration-200"
+>
+  {t.ourStoryTitle || "Our"}{" "}
+  <span >
+    {t.ourStoryTitleHighlight || "Story"}
+  </span>
+</a>
 
+          </nav>
+
+          {/* Section droite : langue, thème et bouton */}
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher />
+            <ThemeToggle />
+            <a href="#beta">
+              <Button
+                className=" px-6 py-2 text-sm font-semibold bg-gradient-to-r from-primary to-blue-500 hover:from-primary/20 hover:to-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                {t.joinBeta || "Join Beta"}
+              </Button>
+            </a>
           </div>
         </div>
-
-        <a href="#beta">
-          <Button
-            className={`bg-gradient-to-r from-[#b64198] to-[#ca6ab1] rounded-full px-8 py-2.5 text-sm font-semibold shadow-lg transition-all duration-500 ${isInStorySection
-                ? 'text-white shadow-[#b64198]/40 hover:shadow-[#b64198]/60 hover:from-[#a83a88] hover:to-[#b85aa1]'
-                : 'text-[#ecdfd2] shadow-[#b64198]/40 hover:shadow-[#b64198]/60 hover:from-[#a83a88] hover:to-[#b85aa1]'
-              }`}
-          >
-            join for Beta test
-          </Button>
-        </a>
       </div>
-    </nav>
+    </header>
   )
 }
