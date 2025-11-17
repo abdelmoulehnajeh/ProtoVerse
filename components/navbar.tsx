@@ -76,7 +76,7 @@ export default function Navbar() {
             <ThemeToggle />
             <a href="#beta">
               <Button
-                className=" px-6 py-2 text-sm font-semibold bg-gradient-to-r from-primary to-blue-500 hover:from-primary/20 hover:to-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                className=" px-6 py-2 text-xs font-semibold bg-gradient-to-r from-primary to-blue-500 hover:from-primary/20 hover:to-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 {t.joinBeta || "Join Beta"}
               </Button>

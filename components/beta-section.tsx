@@ -584,7 +584,7 @@ const handlePartnerSubmit = async () => {
                   <div className="mt-8 p-4 bg-secondary/5 rounded-lg border border-secondary/20">
                     <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
                       <Printer className="w-5 h-5 text-secondary" />
-                      3D prints  *
+                      3D printers   *
                     </h3>
 
                     {partnerForm.printers.map((printer, idx) => (
@@ -593,7 +593,7 @@ const handlePartnerSubmit = async () => {
                         className="mb-4 p-4 bg-card rounded-lg border border-border/50 relative"
                       >
                         <div className="flex justify-between items-center mb-3">
-                          <span className="font-medium text-sm">print #{idx + 1}</span>
+                          <span className="font-medium text-sm">printer #{idx + 1}</span>
                           {partnerForm.printers.length > 1 && (
                             <Button
                               variant="ghost"
